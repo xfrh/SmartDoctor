@@ -22,6 +22,7 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
   const [cameraType, setCameraType] = useState(Camera.Constants.Type.back);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFocusing, setIsFocusing] = useState(false);
   const isFocused = useIsFocused();
   const {id,otherparams} = route.params;
   const { accessToken } = useAuth();
@@ -70,10 +71,25 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
     }
   };
 
+  const handleFocus = async (event) => {
+    if (!isFocusing && cameraRef.current) {
+      setIsFocusing(true);
+      const { pointX, pointY } = event.nativeEvent;
+      try {
+        alert("here");
+        await cameraRef.current.focusAtPoint(pointX, pointY);
+        setIsFocusing(false);
+      } catch (e) {
+        console.error('聚焦失败:', e);
+        setIsFocusing(false);
+      }
+    }
+  };
+
   const onSnap = async () => {
     if (cameraRef.current) {
       setIsLoading(true);
-      const options = { quality: 0.7, base64: true };
+      const options = { quality: 1, base64: true,pictureSize: '1026x1448' };
       const data = await cameraRef.current.takePictureAsync(options);
       const source = data.base64;
        if (source) {
@@ -132,7 +148,8 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
         type={cameraType}
         useCamera2Api={true}
         flashMode={flashMode} // 闪光灯状态
-       
+        touchEnabled={true}
+        onTouchStart={handleFocus}
         />}
 
           <View style={styles.container}>

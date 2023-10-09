@@ -20,6 +20,8 @@ import ImageProcessScreen from './screens/ImageProcessScreen';
 import PreviewImageScreen from './screens/PreviewImageScreen';
 import LogoutScreen from './screens/logout';
 import {AuthProvider } from './context/AuthContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 const Drawer = createDrawerNavigator();
 const App = () => {
     return (
