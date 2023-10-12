@@ -50,7 +50,8 @@ const LoginScreen = ({ navigation }) => {
         navigation.navigate('UserList');
    
        } catch (error) {
-         alert(error);
+         alert(error.request);
+         alert(JSON.stringify(error.request));
        }
 
     });
