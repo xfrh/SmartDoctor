@@ -79,8 +79,9 @@ const NewUserScreen  = ({navigation}) => {
           return;
         }
         if(gender==''){
-          setErrorMessage('请输入受检者性别');
-          return;
+          // setErrorMessage('请输入受检者性别');
+          // return;
+          setGender("男");
         }
         if(age==''){
           setErrorMessage('请输入受检者年龄');

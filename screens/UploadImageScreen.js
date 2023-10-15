@@ -23,6 +23,10 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
   const [isLoading, setIsLoading] = useState(false);
   const [isFocusing, setIsFocusing] = useState(false);
+  const [ratio, setRatio] = useState('4:3'); 
+  const [isRatioSet, setIsRatioSet] =  useState(false);
+  const [imagePadding, setImagePadding] = useState(0);
+  const[designedHeight,setDesignedHeight] = useState(0);
   const isFocused = useIsFocused();
   const {id,otherparams} = route.params;
   const { accessToken } = useAuth();
@@ -30,8 +34,11 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
     'Authorization': `Bearer ${accessToken}`, 
     'Content-Type': 'application/json', 
   };
-
+  const { height, width } = Dimensions.get('window');
+  const screenRatio = height / width;
   useEffect(() => {
+    setIsRatioSet(false);
+    setIsLoading(false);
     if (isFocused) {
        onHandlePermission();
      }
@@ -44,6 +51,58 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
     setHasPermission(status === 'granted');
    };
 
+   const prepareRatio = async () => {
+    let desiredRatio = '4:3';  // Start with the system default
+    // This issue only affects Android
+    if (Platform.OS === 'android') {
+      const ratios = await cameraRef.current.getSupportedRatiosAsync();
+      // console.log(ratios);
+      // Calculate the width/height of each of the supported camera ratios
+      // These width/height are measured in landscape mode
+      // find the ratio that is closest to the screen ratio without going over
+      let distances = {};
+      let realRatios = {};
+      let minDistance = null;
+      for (const ratio of ratios) {
+        const parts = ratio.split(':');
+        const realRatio = parseInt(parts[0]) / parseInt(parts[1]);
+        realRatios[ratio] = realRatio;
+        // ratio can't be taller than screen, so we don't want an abs()
+        const distance = screenRatio - realRatio; 
+        distances[ratio] = realRatio;
+        if (minDistance == null) {
+          minDistance = ratio;
+        } else {
+          if (distance >= 0 && distance < distances[minDistance]) {
+            minDistance = ratio;
+          }
+        }
+      }
+      // set the best match
+      desiredRatio = minDistance;
+      //  calculate the difference between the camera width and the screen height
+      const remainder = Math.floor(
+        (height - realRatios[desiredRatio] * width) / 2
+      );
+      // set the preview padding and preview ratio
+      setImagePadding(remainder);
+      setRatio(desiredRatio);
+      setDesignedHeight(Math.round((width * desiredRatio.split(":")[0]) / desiredRatio.split(":")[1]));
+      // console.log(desiredRatio);
+      // Set a flag so we don't do this 
+      // calculation each time the screen refreshes
+      setIsRatioSet(true);
+    }
+  };
+
+ 
+  const setCameraReady = async() => {
+   
+    if (!isRatioSet) {
+    
+      await prepareRatio();
+    }
+  };
 
   const switchCamera = () => {
     setCameraType(prevCameraType =>
@@ -60,6 +119,16 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
   };
   const handleback=() =>{
     navigation.navigate("UserList");
+  };
+
+  const handleforward= async()=>{
+      await AsyncStorage.getItem('serverUrl').then( (apiUrl)=>{ 
+         axios.get(`http://${apiUrl}/inspections/${id}`,{headers} ).then(response=>{
+          let item =response.data;
+          navigation.navigate('DetailView', { "item":item })
+
+         })
+    });
   };
   const toggleFlashlight = async () => {
     if (cameraRef.current) {
@@ -87,9 +156,9 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
   };
 
   const onSnap = async () => {
+    setIsLoading(true);
     if (cameraRef.current) {
-      setIsLoading(true);
-      const options = { quality: 1, base64: true,pictureSize: '1026x1448' };
+      const options = { quality: 1, base64: true };
       const data = await cameraRef.current.takePictureAsync(options);
       const source = data.base64;
        if (source) {
@@ -116,7 +185,8 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
                  
                 else if(data.status_code=="200"){
                   alert("上传成功!");
-                  navigation.navigate('ResultList',{id:id});
+                  // navigation.navigate('ResultList',{id:id});
+                  handleforward();
                 }
 
            
@@ -144,12 +214,12 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
    <View style={styles.container}>
        { isFocused &&<Camera
         ref={cameraRef}
-        style={styles.container}
+        style={[styles.container, {height: designedHeight,width: width}]}
         type={cameraType}
         useCamera2Api={true}
-        flashMode={flashMode} // 闪光灯状态
-        touchEnabled={true}
-        onTouchStart={handleFocus}
+        flashMode={flashMode}
+        ratio={ratio}
+        onCameraReady={setCameraReady}
         />}
 
           <View style={styles.container}>
@@ -174,8 +244,8 @@ const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
               </View> */}
       
       <View style={styles.camera}>
-        {/* 正方形的聚焦框 */}
-        <View style={styles.focusBox}>
+  {/* 正方形的聚焦框 */}
+      <View style={styles.focusBox}>
         <View style={styles.cornerTopLeft}></View>
           {/* 右上角 */}
           <View style={styles.cornerTopRight}></View>
@@ -239,8 +309,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'white', // 聚焦框边框颜色设置为白色
     width: '75%', // 宽度占据 borderContainer 的三分之一
-    height: '75%', // 高度占据 borderContainer 的三分之一
-    top: '2%', // 从顶部开始
+    height: '60%', // 高度占据 borderContainer 的三分之一
+    top: '5%', // 从顶部开始
     left: '15%', // 从左侧开始
   },
 
@@ -294,6 +364,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
+  guidelines: {
+    flex: 1,
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderColor: 'white',
+  },
+  guideline: {
+    flex: 1,
+    borderWidth: 1,
+    borderStyle: 'dotted',
+  },
+
   textContainer: {
     padding: 10,
   },
