@@ -21,11 +21,13 @@ const httpClient = (url, options = {}) => {
 // 定义数据提供者
 const dataProvider: DataProvider = {
    getList: (resource, params) => {
-   const url = `${apiUrl}/${resource}`;
+   let q = params.filter.q;
+   let url =q? `${apiUrl}/${resource}?q=${q}` : `${apiUrl}/${resource}`;
    return httpClient(url).then((response) => ({
+          
            data: response.json.map((item: string) => {
            const parsedItem = JSON.parse(item);
-           return parsedItem;
+            return parsedItem;
          }),
          total:1,
     }));
@@ -42,12 +44,14 @@ const dataProvider: DataProvider = {
 
   getMany: (resource, params) => {
     const url = `${apiUrl}/${resource}/`;
+   
      return httpClient(url).then((response) => ({
       data: response.json,
     }));
   },
   getManyReference:(resource, params) => {
     const url = `${apiUrl}/${resource}/`;
+  
     return httpClient(url).then((response) => ({
       data: response.json,
     }));
@@ -69,6 +73,7 @@ const dataProvider: DataProvider = {
     const url = `${apiUrl}/${resource}`;
     const cur_time=getCurrentDateTime();
     params.data.createAt=cur_time;
+    console.log(JSON.stringify(params.data));
     return httpClient(url, {
         method: 'POST',
         body: JSON.stringify(params.data),
@@ -113,7 +118,7 @@ const dataProvider: DataProvider = {
 
   deleteMany: (resource, params) => {
     const url = `${apiUrl}/${resource}/${stringify(params)}`;
-    console.log(url);
+    
     return httpClient(url, {
         method: 'Delete',
       })

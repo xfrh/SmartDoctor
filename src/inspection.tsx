@@ -68,7 +68,7 @@ export const InspectionEdit = (props) =>{
             <TextInput source="phone" label="手机"/>
             <TextInput source="createAt" label="创建时间" />
             <TextInput source="updateAt" label="更新时间" />
-             <TextInput source="testedby" label="科室" />
+             <TextInput source="testedby" label="科室" inputProps={{ readOnly: true }} />
             <TextInput multiline source="conclusion" label="结论"
              format={(value) => {
                 if (value && value.control_distance !== undefined) {
@@ -76,7 +76,7 @@ export const InspectionEdit = (props) =>{
                 } else {
                   return "暂无结论";
                 }
-              }} />
+              }}  inputProps={{ readOnly: true }}/>
                     
          </SimpleForm>
          {imageSrc && <img src={imageSrc} alt="图像" style={{ width: '25%', height: 'auto' }} />}
@@ -113,5 +113,5 @@ export const InspectionCreate = () => (
 
   const userFilters = [
     <TextInput source="q" label="搜索..." alwaysOn />,
-    <ReferenceInput source="name" label="受检人" reference="accepters" />,
+    <ReferenceInput source="name" label="受检人" reference="inspections" />,
 ];
