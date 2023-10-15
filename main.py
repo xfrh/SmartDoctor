@@ -19,6 +19,7 @@ from mymiddelware import ConditionalMiddleware
 from user import User
 from login import Login
 from item import Item
+from department import Department
 from inspection import Inspection
 from database import Database
 from fastapi.responses import FileResponse
@@ -59,9 +60,21 @@ async def create_user(user: User):
 
 @app.delete("/users/{id}")
 async def delete_user(id:str):
-    myquery = {"_id": ObjectId(id)}
-    Database.deleteone("user", myquery)
-    return {"user_id": id}
+    if 'ids' in id:
+        deleters = []
+        xs = id.split("ids=")
+        xs = xs[1:]
+        for x in xs:
+            if '&' in x:
+                x = x.replace("&", "").strip()
+            myquery = {"_id": ObjectId(x)}
+            Database.deleteone("user", myquery)
+            deleters.append({"id": x})
+        return deleters
+    else:
+        myquery = {"_id": ObjectId(id)}
+        Database.deleteone("user", myquery)
+        return {"user_id": id}
 
 @app.put("/users/{id}")
 async def update_user(id: str, user: User):
@@ -73,6 +86,7 @@ async def update_user(id: str, user: User):
 
 @app.get("/users/{id}")
 async def read_user(id:str):
+
     myquery = {"_id":  ObjectId(id)}
     user=Database.findone("user",myquery)
     user["password"]=decyptPassword(user["password"])
@@ -87,10 +101,15 @@ async def read_users(request:Request,q: str | None = None):
     users = []
     my_data = request.state.user
     if my_data['role'] == 'admin':
-        q = []
+        qq = []
     else:
-        q = {"department": my_data['department']}
-    results = Database.find("user", q)
+        qq = {"department": my_data['department']}
+    if q:
+        if my_data['role'] == 'admin':
+            qq ={'username':{'$regex': q}}
+        else:
+            qq = {"department": my_data['department'],'username':{'$regex': q} }
+    results = Database.find("user", qq)
     for doc2 in results:
         doc2["password"] = decyptPassword(doc2["password"])
         ret = JSONEncoder().encode(doc2).replace("_id", "id")
@@ -129,9 +148,21 @@ async def create_accepter(accepter: Accpeter):
 
 @app.delete("/accepters/{id}")
 async def delete_accepter(id:str):
-    myquery = {"_id": ObjectId(id)}
-    Database.deleteone("accepter", myquery)
-    return {"accept_id": id}
+    if 'ids' in id:
+        deleters = []
+        xs = id.split("ids=")
+        xs = xs[1:]
+        for x in xs:
+            if '&' in x:
+                x = x.replace("&", "").strip()
+            myquery = {"_id": ObjectId(x)}
+            Database.deleteone("accepter", myquery)
+            deleters.append({"id": x})
+        return deleters
+    else:
+        myquery = {"_id": ObjectId(id)}
+        Database.deleteone("accepter", myquery)
+        return {"accept_id": id}
 
 @app.put("/accepters/{id}")
 async def update_accepter(id: str, accepter: Accpeter):
@@ -156,10 +187,17 @@ async def read_accepters(request:Request,q: str | None = None):
     accepters = []
     my_data = request.state.user
     if my_data['role'] == 'admin':
-        q=[]
+        qq=[]
     else:
-        q ={"department" : my_data['department']}
-    results = Database.find("accepter", q)
+        qq ={"department" : my_data['department']}
+
+    if q:
+        if my_data['role'] == 'admin':
+            qq = {'name': {'$regex': q}}
+        else:
+            qq = {"department": my_data['department'], 'name': {'$regex': q}}
+
+    results = Database.find("accepter", qq)
     for doc2 in results:
 
        ret = JSONEncoder().encode(doc2).replace("_id", "id")
@@ -227,10 +265,15 @@ async def read_inspections(request:Request,q: str | None = None):
     inspections = []
     my_data = request.state.user
     if my_data['role'] == 'admin':
-        q = []
+        qq = []
     else:
-        q = {"testedby": my_data['department']}
-    results = Database.find("inspection", q)
+        qq = {"testedby": my_data['department']}
+    if q:
+        if my_data['role'] == 'admin':
+            qq = {'name': {'$regex': q}}
+        else:
+            qq = {"department": my_data['department'], 'name': {'$regex': q}}
+    results = Database.find("inspection", qq)
     for doc2 in results:
         ret = JSONEncoder().encode(doc2).replace("_id", "id")
         inspections.append(ret)
@@ -320,9 +363,65 @@ async def read_items(q: str | None = None):
 async def create_upload_file(file: UploadFile):
     return {"filename": file.filename}
 
+@app.get("/departments/")
+async def read_departments(request:Request,q: str | None = None):
+    departments = []
+    my_data = request.state.user
+    if my_data['role'] == 'admin':
+        qq = []
+    else:
+        qq = {"name": my_data['department']}
+    if q and my_data['role'] == 'admin':
+        qq = {'name': {'$regex': q}}
+    results = Database.find("department", qq)
+    for doc2 in results:
+        ret = JSONEncoder().encode(doc2).replace("_id", "id")
+        departments.append(ret)
+
+    return departments
 
 
+@app.get("/departments/{id}")
+async def read_department(id:str):
+        myquery = {"_id":  ObjectId(id)}
+        department=Database.findone("department",myquery)
+        if department:
+            ret = JSONEncoder().encode(department).replace("_id", "id")
+            return ret
+        else:
+            pass
 
+@app.post("/departments/")
+async def create_departments(department: Department):
+   department_id= Database.insert("department",{"name":department.name,"createAt": department.createAt})
+   return {"id": str(department_id.inserted_id)}
 
+@app.delete("/departments/{id}")
+async def delete_departments(id:str):
 
+    if 'ids' in id:
+        deleters=[]
+        xs = id.split("ids=")
+        xs = xs[1:]
 
+        for x in xs:
+            if '&' in x:
+               x = x.replace("&","").strip()
+
+            myquery = {"_id": ObjectId(x)}
+
+            Database.deleteone("department", myquery)
+            deleters.append({"id":x})
+        return deleters
+    else:
+        myquery = {"_id": ObjectId(id)}
+        print(myquery)
+        Database.deleteone("department", myquery)
+        return {"id": id}
+
+@app.put("/departments/{id}")
+async def update_departments(id: str, department: Department):
+    newvalue={"$set":{"name":department.name,"createAt":department.createAt}}
+    query = {"_id": ObjectId(id)}
+    Database.update("department",query,newvalue)
+    return {"id": id, "name": department.name, "createAt": department.createAt}
