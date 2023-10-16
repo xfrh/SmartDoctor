@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
+import { useIsFocused } from '@react-navigation/native'; 
 import { View, Text, TextInput, Button, StyleSheet, KeyboardAvoidingView,ScrollView  } from 'react-native';
 import {RadioGroup, RadioButton} from 'react-native-flexi-radio-button'
 import { useFocusEffect } from '@react-navigation/native'; 
+import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const NewUserScreen  = ({navigation}) => {
   const [name, setName] = useState('');
-  const [gender, setGender] = useState('');
+  const [gender, setGender] = useState('男');
   const [age, setAge] = useState('');
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [data, setData] = useState([]);
   const { accessToken } = useAuth();
+  const isFocused = useIsFocused();
   const headers = {
     'Authorization': `Bearer ${accessToken}`, 
     'Content-Type': 'application/json', 
@@ -23,14 +27,30 @@ const NewUserScreen  = ({navigation}) => {
         React.useCallback(() => {
           // 在页面获得焦点时重置搜索文本
           setName('');
-          setGender('');
+          setGender('男');
           setAge('');
           setPhone('');
           setDepartment('');
           setErrorMessage('')
-        }, [])
+          if (isFocused) {
+            fetchData();
+        }
+        }, [isFocused])
       );
 
+      
+    const fetchData =  async ()=> await AsyncStorage.getItem('serverUrl').then((url)=>{
+      try {
+          axios.get(`http://${url}/departments/`,{headers}).then((response) => {
+              setData(response.data);
+           
+        })
+          setErrorMessage('');
+      } catch (error) {
+        alert(error);
+      }
+
+  });
      
 
       const handleNameChange = (value) => {
@@ -78,11 +98,13 @@ const NewUserScreen  = ({navigation}) => {
           setErrorMessage('请输入受检者姓名');
           return;
         }
+
         if(gender==''){
-          // setErrorMessage('请输入受检者性别');
-          // return;
-          setGender("男");
+          setErrorMessage('请选择受检者性别');
+          return;
         }
+       
+       
         if(age==''){
           setErrorMessage('请输入受检者年龄');
           return;
@@ -94,8 +116,7 @@ const NewUserScreen  = ({navigation}) => {
         const crerateDate = getCurrentDateTime();
         await AsyncStorage.getItem('serverUrl').then(async (url)=>{
             try {
-
-              const response = await axios.post("http://"+ url +"/accepters/", {
+                const response = await axios.post("http://"+ url +"/accepters/", {
                 "name":name,
                 "sex":gender,
                 "age": age,
@@ -135,6 +156,9 @@ const NewUserScreen  = ({navigation}) => {
           onChangeText={handleNameChange}
         />
       </View>
+
+
+   
 
       <View style={styles.formGroup}>
       <Text style={styles.label}>性别:</Text>
@@ -176,17 +200,27 @@ const NewUserScreen  = ({navigation}) => {
           />
         </View>
 
-        
-      <View style={styles.formGroup}>
+        <View style={styles.formpicker} >
      
-      <Text style={styles.label}>科室:</Text>
-          <TextInput
-            value={department}
-            onChangeText={handleDepartmentChange}
-            placeholder="请输入检测科室"
-            style={styles.input}
-          />
-        </View>
+     <Text style={styles.label}>科室:</Text>
+         {/* <TextInput
+           value={department}
+           onChangeText={handleDepartmentChange}
+           placeholder="请输入检测科室"
+           style={styles.input}
+         /> */}
+
+          <Picker
+      selectedValue={department}
+      onValueChange={handleDepartmentChange}
+    >
+      <Picker.Item label="请输入检测科室" value="" />
+      {data.map((item) => (
+         <Picker.Item key={JSON.parse(item).id} label={JSON.parse(item).name} value={JSON.parse(item).name} />
+       ))}
+      </Picker>
+       </View>
+
         <View style={styles.loginButtonContainer}>
           {errorMessage !== '' && <Text style={styles.errorMessage}>{errorMessage}</Text>}
             <Button title="确定" onPress={handleAddNewUser} />
@@ -207,6 +241,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  formpicker:{
+  padding:10,
+    
+  },
   label: {
     flex: 1,
     marginRight: 10,
@@ -221,6 +259,10 @@ const styles = StyleSheet.create({
   loginButtonContainer: {
     marginTop: 20, // 添加上边距
   
+  },
+  errorMessage: {
+    color: 'red',
+    marginBottom: 10,
   },
 });
 
