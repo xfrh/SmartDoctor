@@ -65,12 +65,10 @@ const UploadImageScreen =({route,navigation})=> {
     });
   };
   const toggleFlashlight = async () => {
-    if (camera.current) {
-      if (flashMode === Camera.Constants.FlashMode.off) {
-        setFlashMode(Camera.Constants.FlashMode.torch); // 打开闪光灯
-      } else {
-        setFlashMode(Camera.Constants.FlashMode.off); // 关闭闪光灯
-      }
+    if (flashMode === Camera.Constants.FlashMode.off) {
+      setFlashMode(Camera.Constants.FlashMode.torch);
+    } else {
+      setFlashMode(Camera.Constants.FlashMode.off);
     }
   };
 
@@ -190,6 +188,7 @@ const UploadImageScreen =({route,navigation})=> {
          { isFocused &&<Camera
           style={[styles.container,{height: designedHeight,width: width}]}
           onCameraReady={setCameraReady}
+          flashMode={flashMode}
           ratio={ratio}
           ref={(ref) => {
             setCamera(ref);
