@@ -116,103 +116,77 @@ def save_image(base64_image_data):
     cv.imwrite("output.jpg", image)
 
 
+def cropped_image(image):
+    height, width, _ = image.shape
+    top = int(0.10 * height)
+    left = int(0.10 * width)
+    bottom = top + int(0.52 * height)
+    right = left + int(0.85 * width)
+    cropped_image = image[top:bottom, left:right]
+    return cropped_image
+
+def cropped_circle():
+    user_image = cv.imread('cropped_image.jpg')
+    x1, y1 = int(0.37 * user_image.shape[1]), int(0.53 * user_image.shape[0])
+    x2, y2 = int(0.39 * user_image.shape[1]), int(0.53 * user_image.shape[0])
+    cropped_circle = user_image[y1:y2, x1:x2]
+    return cropped_circle
 
 
 def circle_detection(base64_image):
-        # 读取图像
-        # save_image(base64_image)
+    # 读取图像
+    # save_image(base64_image)
+    # 读取图像
+    # save_image(base64_image)
+    try:
         image = get_image(base64_image)
-        # image = cv.imread("output.jpg")
-        # hor = Horiztal_detection(image)
-        # if hor:
-        #     return hor,400
-        # blur = blur_detection(image)
-        # if blur:
-        #      return blur,400
-        # image = cv.imread('c:\sample.jpg')
-        # 使用HoughCircles函数检测图像中的圆形
-        # mse = Image_Compare(image)
-        # print(mse)
-        # if mse > 1.8:
-        #     return "图像差异过大", 400
+        image = cropped_image(image)
+
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-        circles = cv.HoughCircles(
-            gray, cv.HOUGH_GRADIENT, dp=1, minDist=20, param1=50, param2=30, minRadius=10, maxRadius=50)
+        gray = cv.medianBlur(gray, 5)
+        rows = gray.shape[0]
+        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8,
+                                  param1=100, param2=30,
+                                  minRadius=1, maxRadius=30)
+        num_circles = circles.shape[1]
+        selected_circles = []
+        print("找到{}个圆".format(num_circles))
         if circles is None:
-            return "质检不通过",400
-
-        # 初始化一个字典列表来存储检测到的圆形的颜色、坐标和半径
-        circle_info = []
-        circle_colors = {'Test': None, 'Control': None}
+            return "质检不通过", 400
+        if(num_circles<2 or num_circles > 3):
+            return "质检不通过", 400
+    except Exception as e:
+        error_message = e.args[0] if e.args else "Unknown error"
+        return error_message,400
+    # 初始化一个字典列表来存储检测到的圆形的颜色、坐标和半径
+    else:
         if circles is not None:
-            circles = np.uint16(np.around(circles))
-            num_circles = circles.shape[1]
-            print("找到{}个圆".format(num_circles))
-            # 对检测到的圆按半径排序，以找到最小的两个
-            if num_circles >= 33 and num_circles <=34:
-                print("OK")
-            else:
-                return "质检不通过", 400
-            circles = sorted(circles[0, :], key=lambda x: x[2])
-            for circle in circles[:2]:  # 仅处理最小的两个圆
-                center_x, center_y = circle[0], circle[1]
-                radius = circle[2]
-                #
-                # # 使用Tesseract检测圆附近的文本
-                # x, y, w, h = center_x - radius, center_y - radius, 2 * radius, 2 * radius
-                # cropped_image = image[y:y + h, x:x + w]
-                # text = pytesseract.image_to_string(cropped_image, output_type=Output.STRING)
+              circles = np.uint16(np.around(circles))
+        for i in circles[0, :]:
+             center = (i[0], i[1])
+            # circle center
+             cv.circle(image, center, 1, (0, 100, 100), 3)
+            # circle outline
+             radius = i[2]
+             b, g, r = image[center]
+             selected_circles.append((radius, (r, g, b)))
+             cv.circle(image, center, radius, (255, 0, 255), 3)
 
-                # 获取圆形内部像素的颜色均值
-                mask = np.zeros_like(image)
-                cv.circle(mask, (center_x, center_y), radius, (255, 255, 255), -1)
-                masked_image = cv.bitwise_and(image, mask)
-                mean_color = np.mean(masked_image, axis=(0, 1))
-
-                # 将颜色、坐标和半径信息存储到字典中
-                circle_info.append({
-                    'Color': mean_color,
-                    'Center': (center_x, center_y),
-                    'Radius': radius,
-                })
-
-        c1 = (circle_info[0]['Center'][0])
-        c2 = (circle_info[1]['Center'][0])
-
-        if(c1>c2):
-                circle_colors['Control'] = circle_info[0]['Color']
-                circle_colors['Test'] = circle_info[1]['Color']
-        else:
-                circle_colors['Control'] = circle_info[1]['Color']
-                circle_colors['Test'] = circle_info[0]['Color']
-        control_distance = color_distance(circle_colors['Control'], Sample_2)
-
-        # if(control_distance>10):
-        #     return "Control 质检不通过",400
-        test_1 = color_distance(circle_colors['Test'], Sample_1)
-        test_2 = color_distance(circle_colors['Test'], Sample_2)
-        test_3 = color_distance(circle_colors['Test'], Sample_3)
-        test_4 = color_distance(circle_colors['Test'], Sample_4)
-        out_str ={"control_distance": control_distance, "test_1": test_1, "test_2": test_2, "test_3": test_3,
-                "test_4": test_4}
+             # print(radius)
+        selected_circles.sort(key=lambda circle: circle[0])
+        test_color=selected_circles[0][1]
+        control_color=selected_circles[1][1]
+        control_distance=color_distance(control_color,Sample_1)
+        test_1 = color_distance(test_color, Sample_1)
+        test_2 = color_distance(test_color, Sample_2)
+        test_3 = color_distance(test_color, Sample_3)
+        test_4 = color_distance(test_color, Sample_4)
+        out_str = {"control_distance": control_distance, "test_1": test_1, "test_2": test_2, "test_3": test_3,
+                   "test_4": test_4}
         now = datetime.now()
-        newvalue = {"$set": {"conclusion": out_str, "updateAt": now.strftime("%Y-%m-%d %H:%M") }}
+        newvalue = {"$set": {"conclusion": out_str, "updateAt": now.strftime("%Y-%m-%d %H:%M")}}
+        cv.imwrite('image_with_circle.jpg', image)
         return newvalue, 200
-        # json_string = json.dumps(circle_colors)
-        #
-        # return json_string
-        # return circle_colors
-
-        # 输出最小的两个圆的颜色、坐标和半径信息
-        # for idx, info in enumerate(circle_info, start=1):
-        #     print(f"最小圆 {idx} 的信息:")
-        #     print("颜色(RGB):", info['Color'])
-        #     print("中心坐标:", info['Center'])
-        #     print("半径:", info['Radius'])
-        #     print("文本:", info['Text'])
-        #     print()
-        # return circle_colors
-
 def color_distance(color1, color2):
     r1, g1, b1 = color1
     r2, g2, b2 = color2

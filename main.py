@@ -292,6 +292,8 @@ async def read_item(item:Item):
      if status_code==400:
          return {"error":result,"status_code":"400"}
      if status_code ==200:
+         # cropped_image = imagePrcess.cropped_image()
+         # print(cropped_image)
          item_id=Database.insert("item",{"file":item.file,"inspection_id" : item.inspection_id})
          query = {"_id": ObjectId(item.inspection_id)}
          inspection_id=Database.update("inspection",query,result)
