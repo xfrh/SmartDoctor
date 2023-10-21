@@ -2,15 +2,13 @@ import {
     List,
     Datagrid,
     TextField,
-    ReferenceField,
-    EditButton,
+    required,
     Create,
     Edit,
     SimpleForm,
     ReferenceInput,
     TextInput,
-    PasswordInput, 
-    SelectInput,
+  
 } from "react-admin";
 
 import {getCurrentDateTime } from './users'
@@ -27,8 +25,8 @@ export const DepartmentList = () => (
 export const DepartmentEdit = () => (
     <Edit>
         <SimpleForm>
-            <TextInput source="name" label="检测科室"/>
-            <TextInput source="createAt" label="创建时间" />
+            <TextInput source="name" label="检测科室" validate={required()}/>
+            <TextInput source="createAt" label="创建时间" validate={required()} />
           
          </SimpleForm>
     </Edit>
@@ -39,8 +37,8 @@ export const DepartmentCreate = () =>
     (
      <Create >
       <SimpleForm >
-      <TextInput source="name" label="检测科室"/>
-      <TextInput source="createAt" label="创建时间"  defaultValue={getCurrentDateTime} />
+      <TextInput source="name" label="检测科室" validate={required()} />
+      <TextInput source="createAt" label="创建时间"  defaultValue={getCurrentDateTime} validate={required()} />
       </SimpleForm>
     </Create>
   ) ;

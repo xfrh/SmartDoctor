@@ -21,8 +21,15 @@ const httpClient = (url, options = {}) => {
 // 定义数据提供者
 const dataProvider: DataProvider = {
    getList: (resource, params) => {
-   let q = params.filter.q;
-   let url =q? `${apiUrl}/${resource}?q=${q}` : `${apiUrl}/${resource}`;
+    let url = `${apiUrl}/${resource}`;
+
+    // Check if a 'q' filter parameter is provided
+    if (params.filter && params.filter.q) {
+      const q = params.filter.q;
+  
+      // Append the 'q' filter parameter to the URL
+      url += `?q=${q}`;
+    }
    return httpClient(url).then((response) => ({
           
            data: response.json.map((item: string) => {

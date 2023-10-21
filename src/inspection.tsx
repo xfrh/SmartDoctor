@@ -5,6 +5,7 @@ import {
     ReferenceField,
     SelectInput,
     Create,
+    required,
     Edit,
     SimpleForm,
     ReferenceInput,
@@ -16,7 +17,7 @@ import {
 
 import React, { useEffect, useState } from 'react';
 import { useDataProvider } from 'react-admin';
-import {getCurrentDateTime } from './users'
+import {getCurrentDateTime,validateAge,validatePhoneNumber } from './users'
 
   
 export const InspectionList = () => (
@@ -55,8 +56,9 @@ export const InspectionEdit = (props) =>{
     
         <Edit>
         <SimpleForm >
-            <TextInput source="name" label="受检人"/>
+            <TextInput source="name" label="受检人" validate={required()}/>
             <SelectInput
+                validate={required()}
                 source="sex"
                 label="性别"
                 choices={[
@@ -64,10 +66,10 @@ export const InspectionEdit = (props) =>{
                 { id: '女', name: '女' },
                 ]}
       />
-            <TextInput source="age" label="年龄" />
-            <TextInput source="phone" label="手机"/>
-            <TextInput source="createAt" label="创建时间" />
-            <TextInput source="updateAt" label="更新时间" />
+            <TextInput source="age" label="年龄" validate={[required(),validateAge]}/>
+            <TextInput source="phone" label="手机" validate={[required(),validatePhoneNumber]}/>
+            <TextInput source="createAt" label="创建时间" inputProps={{ readOnly: true }} />
+            <TextInput source="updateAt" label="更新时间" inputProps={{ readOnly: true }} />
              <TextInput source="testedby" label="科室" inputProps={{ readOnly: true }} />
             <TextInput multiline source="conclusion" label="结论"
              format={(value) => {

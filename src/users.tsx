@@ -12,11 +12,33 @@ import {
     TextInput,
     PasswordInput, 
     SelectInput,
+   
 
    
 } from "react-admin";
 import React, { useEffect, useState } from 'react';
 import { useDataProvider } from 'react-admin';
+
+const validatePassword = (value) => {
+  if (value.length < 6) {
+    return '密码不能少于6位';
+  }
+  return undefined; // No validation error
+};
+
+export const validatePhoneNumber = (value) => {
+  const phoneNumberPattern = /^1[3|4|5|6|7|8][0-9]{9}$/;
+  if (!phoneNumberPattern.test(value)) {
+    return '请输入有效手机号码'; 
+  }
+ 
+};
+
+export const validateAge = (value) => {
+  if (isNaN(value) || value <= 0) {
+    return '年龄必须是正整数';
+  }
+};
 
 export const getCurrentDateTime = () => {
     const now = new Date();
@@ -46,10 +68,10 @@ export const UserEdit = () =>(
     
      <Edit>
         <SimpleForm>
-            <TextInput source="username" label="用户名" />
-            <PasswordInput source="password" label="密码"/>
-            <TextInput source="phone" label="手机"/>
-            <TextInput source="department" label="科室" inputProps={{ readOnly: true }}/>
+            <TextInput source="username" label="用户名" validate={required()} />
+            <PasswordInput source="password" label="密码" validate={validatePassword}/>
+            <TextInput source="phone" label="手机" validate={validatePhoneNumber}/>
+            <TextInput source="department" label="科室" validate={required()}/>
             <TextInput source="createAt" label="创建时间"  />
             <SelectInput
                 source="role"
@@ -58,7 +80,9 @@ export const UserEdit = () =>(
                 { id: 'admin', name: '管理员' },
                 { id: 'user', name: '用户' },
                 ]}
-      />
+     
+       validate={required()}
+     />
         </SimpleForm>
     </Edit>
     );
@@ -84,9 +108,9 @@ return (
     <Create>
       <SimpleForm>
             <TextInput source="username" label="用户名" validate={[required()]}  />
-            <PasswordInput source="password" label="密码" validate={[required()]} />
-            <TextInput source="phone" label="手机" validate={[required()]} />
-            <SelectInput label="选择科室" source="department" choices={departments} optionText="name" optionValue="name" />
+            <PasswordInput source="password" label="密码" validate={[required(),validatePassword]} />
+            <TextInput source="phone" label="手机"  validate={[required(),validatePhoneNumber]} />
+            <SelectInput label="选择科室" source="department" choices={departments} optionText="name" optionValue="name" validate={required()} />
             <TextInput source="createAt" label="创建时间" defaultValue={getCurrentDateTime} validate={[required()]} />
             <SelectInput
             validate={[required()]} 

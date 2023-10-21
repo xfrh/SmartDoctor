@@ -4,6 +4,7 @@ import {
     TextField,
     ReferenceField,
     EditButton,
+    required,
     Create,
     Edit,
     SimpleForm,
@@ -14,12 +15,12 @@ import {
 } from "react-admin";
 import React, { useEffect, useState } from 'react';
 import { useDataProvider } from 'react-admin';
-import {getCurrentDateTime } from './users'
+import {getCurrentDateTime,validatePhoneNumber,validateAge } from './users'
 export const AccepterList = () => (
     <List filters={userFilters}>
         <Datagrid rowClick="edit">
             <TextField source="id"  />
-            <TextField source="name" label="受检人" />
+            <TextField source="name" label="受检人"  />
             <TextField source="sex" label="性别" />
             <TextField source="age" label="年龄" />
             <TextField source="phone" label="手机" />
@@ -32,8 +33,9 @@ export const AccepterList = () => (
 export const AccepterEdit = () =>(
     <Edit>
         <SimpleForm>
-            <TextInput source="name" label="受检人"/>
+            <TextInput source="name" label="受检人" validate={required()}/>
             <SelectInput
+                validate={required()}
                 source="sex"
                 label="性别"
                 choices={[
@@ -41,8 +43,8 @@ export const AccepterEdit = () =>(
                 { id: '女', name: '女' },
                 ]}
       />
-            <TextInput source="age" label="年龄" />
-            <TextInput source="phone" label="手机"/>
+            <TextInput source="age" label="年龄" validate={[required(),validateAge]}/>
+            <TextInput source="phone" label="手机" validate={[required(),validatePhoneNumber]}/>
             <TextInput source="createAt" label="创建时间" inputProps={{ readOnly: true }} />
             <TextInput source="department" label="检验科室" inputProps={{ readOnly: true }} />
          </SimpleForm>
@@ -68,8 +70,9 @@ export const AccepterCreate = () =>
     return (
      <Create >
       <SimpleForm >
-      <TextInput source="name" label="受检人"/>
+      <TextInput source="name" label="受检人" validate={required()}/>
       <SelectInput
+                validate={required()}
                 source="sex"
                 label="性别"
                 choices={[
@@ -77,10 +80,10 @@ export const AccepterCreate = () =>
                 { id: '女', name: '女' },
                 ]}
       />
-            <TextInput source="age" label="年龄" />
-            <TextInput source="phone" label="手机"/>
-            <TextInput source="createAt" label="创建时间"  defaultValue={getCurrentDateTime} />
-            <SelectInput label="选择科室" source="department" choices={departments} optionText="name" optionValue="name" />
+            <TextInput source="age" label="年龄" validate={required()}  />
+            <TextInput source="phone" label="手机" validate={validatePhoneNumber}/>
+            <TextInput source="createAt" label="创建时间"  defaultValue={getCurrentDateTime} validate={required()}/>
+            <SelectInput label="选择科室" source="department" choices={departments} optionText="name" optionValue="name" validate={required()}/>
      
       </SimpleForm>
     </Create>
