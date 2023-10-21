@@ -9,10 +9,11 @@ import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import ForgetScreen from './screens/SmsLoginScreen';
 import UserListScreen from './screens/UserListScreen';
-import TestResultScreen from './screens/TestResultScreen';
+import TestResultScreen from './screens/TestResultScreen'; 
 import TestDetailScreen from './screens/TestDetailScreen';
 import CustomBarScreen from './screens/CustomBarScreen';
 import AboutUsScreen from './screens/AboutusScreen';
+
 import UploadImageScreen from './screens/UploadImageScreen';
 import NewUserScreen from './screens/NewUserScreen';
 import ConfigNetScreen from './screens/ConfigNetScreen';
@@ -25,6 +26,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 const Drawer = createDrawerNavigator();
 const App = () => {
     return (
+  
     <AuthProvider>
     <NavigationContainer>
     <Drawer.Navigator initialRouteName="Home" screenOptions={{
@@ -52,7 +54,9 @@ const App = () => {
         <Drawer.Screen name="ResultList" component={TestResultScreen} options={{title:'检验结果查询'}} />
         <Drawer.Screen name="NetUrl" component={ConfigNetScreen} options={{title:'设置服务器地址'}} />
          <Drawer.Screen name="AboutUs" component={AboutUsScreen} options={{title:'关于我们'}} />
-        <Drawer.Screen name="Upload" component={UploadImageScreen} options={{ title:'拍照', drawerItemStyle: { height: 0 }}} /> 
+        
+          <Drawer.Screen name="Upload" component={UploadImageScreen} options={{ title:'拍照', drawerItemStyle: { height: 0 }}} /> 
+         
          <Drawer.Screen name="AddPerson" component={NewUserScreen} options={{ title:'新建受检人', drawerItemStyle: { height: 0 }}} />
          <Drawer.Screen name="Logout" component={LogoutScreen} options={{title:'退出登录'}} />
         
@@ -65,7 +69,9 @@ const App = () => {
 
       </Drawer.Navigator>
     </NavigationContainer>
+   
     </AuthProvider>
+  
   );
 };
 
