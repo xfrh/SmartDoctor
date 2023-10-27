@@ -157,36 +157,41 @@ def circle_detection(base64_image):
             return "质检不通过", 400
     except Exception as e:
         error_message = e.args[0] if e.args else "Unknown error"
-        return error_message,400
+        return "质检不通过",400
     # 初始化一个字典列表来存储检测到的圆形的颜色、坐标和半径
     else:
-        if circles is not None:
-              circles = np.uint16(np.around(circles))
-        for i in circles[0, :]:
-             center = (i[0], i[1])
-            # circle center
-             cv.circle(image, center, 1, (0, 100, 100), 3)
-            # circle outline
-             radius = i[2]
-             b, g, r = image[center]
-             selected_circles.append((radius, (r, g, b)))
-             cv.circle(image, center, radius, (255, 0, 255), 3)
+        try:
+            if circles is not None:
+                  circles = np.uint16(np.around(circles))
+            for i in circles[0, :]:
+                 center = (i[0], i[1])
+                # circle center
+                 cv.circle(image, center, 1, (0, 100, 100), 3)
+                # circle outline
+                 radius = i[2]
+                 b, g, r = image[center]
+                 selected_circles.append((radius, (r, g, b)))
+                 cv.circle(image, center, radius, (255, 0, 255), 3)
 
-             # print(radius)
-        selected_circles.sort(key=lambda circle: circle[0])
-        test_color=selected_circles[0][1]
-        control_color=selected_circles[1][1]
-        control_distance=color_distance(control_color,Sample_1)
-        test_1 = color_distance(test_color, Sample_1)
-        test_2 = color_distance(test_color, Sample_2)
-        test_3 = color_distance(test_color, Sample_3)
-        test_4 = color_distance(test_color, Sample_4)
-        out_str = {"control_distance": control_distance, "test_1": test_1, "test_2": test_2, "test_3": test_3,
-                   "test_4": test_4}
-        now = datetime.now()
-        newvalue = {"$set": {"conclusion": out_str, "updateAt": now.strftime("%Y-%m-%d %H:%M")}}
-        cv.imwrite('image_with_circle.jpg', image)
-        return newvalue, 200
+                 # print(radius)
+            selected_circles.sort(key=lambda circle: circle[0])
+            test_color=selected_circles[0][1]
+            control_color=selected_circles[1][1]
+            control_distance=color_distance(control_color,Sample_1)
+            test_1 = color_distance(test_color, Sample_1)
+            test_2 = color_distance(test_color, Sample_2)
+            test_3 = color_distance(test_color, Sample_3)
+            test_4 = color_distance(test_color, Sample_4)
+            out_str = {"control_distance": control_distance, "test_1": test_1, "test_2": test_2, "test_3": test_3,
+                       "test_4": test_4}
+            now = datetime.now()
+            newvalue = {"$set": {"conclusion": out_str, "updateAt": now.strftime("%Y-%m-%d %H:%M")}}
+            cv.imwrite('image_with_circle.jpg', image)
+            return newvalue, 200
+        except Exception as e:
+            error_message = e.args[0] if e.args else "Unknown error"
+            return error_message, 400
+
 def color_distance(color1, color2):
     r1, g1, b1 = color1
     r2, g2, b2 = color2
