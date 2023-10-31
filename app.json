@@ -30,7 +30,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
- 
     "extra": {
       "eas": {
         "projectId": "727be536-d4a2-4d73-9a61-f39181f1d563"
@@ -39,10 +38,10 @@
     "plugins": [
       [
         "./plugins/trust-local-certs.js"
-
-      ]
+      ],
+         
+      "expo-build-properties"
+      
     ]
-  
-
   }
 }

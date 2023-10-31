@@ -73,9 +73,13 @@ const UploadImageScreen =({route,navigation})=> {
   };
 
   const onSnap = async () => {
+    requestAnimationFrame(() => {
+      setIsLoading(true);
+    });
+  try{
     setIsLoading(true);
     if (camera) {
-      
+      const timeout = 10000;
       const options = { quality: 1, base64: true };
       const data = await camera.takePictureAsync(options);
       const source = data.base64;
@@ -87,10 +91,11 @@ const UploadImageScreen =({route,navigation})=> {
           inspection_id: id,
         };
          await AsyncStorage.getItem('serverUrl').then((apiUrl)=>{ 
-          fetch(`http://${apiUrl}/item/`, {
+          axios(`http://${apiUrl}/item/`, {
             body: JSON.stringify(data),
             headers: headers,
-            method: 'POST'
+            method: 'POST',
+            timeout: timeout, // 设置超时时间
           })
             .then(async response => {
                 setIsLoading(false);
@@ -102,21 +107,35 @@ const UploadImageScreen =({route,navigation})=> {
                 }
                  
                 else if(data.status_code=="200"){
+                  setIsLoading(false);
                   alert("上传成功!");
                   // navigation.navigate('ResultList',{id:id});
                   handleforward();
                 }
-
-           
-             
+            
             })
             .catch(err => {
-              alert(err);
+              setIsLoading("false");
+              handeDelete();
+              alert("拍照不成功,请重试: " + err.message);
+              handleback();
             });
         }) 
+      } else{
+        setIsLoading("false");
+        alert("camera source is none")
       }
       
+    } else{
+      setIsLoading("false");
+      alert("camera is null");
     }
+
+  }catch (error) {
+    console.error("发生错误:", error);
+    alert(error.toString());
+  }
+   
   };
 
   // set the camera ratio and padding.
@@ -186,7 +205,7 @@ const UploadImageScreen =({route,navigation})=> {
     return (
       <View style={styles.container}>
          { isFocused &&<Camera
-          style={[styles.container,{height: designedHeight,width: width}]}
+           style={[styles.container,{height: designedHeight,width: width}]}
           onCameraReady={setCameraReady}
           flashMode={flashMode}
           ratio={ratio}

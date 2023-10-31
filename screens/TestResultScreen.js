@@ -30,21 +30,33 @@ import axios from 'axios';
     }
   }, [isFocused]); 
 
-const fetchData =  async ()=> await AsyncStorage.getItem('serverUrl').then( async (url)=>{
-            try {
+// const fetchData =  async ()=> await AsyncStorage.getItem('serverUrl').then( async (url)=>{
+//             try {
                    
-                    const response = await fetch(`http://${url}/inspections/`,{headers:headers});
-                    const result = await response.json();
+//                     const response = await fetch(`http://${url}/inspections/`,{headers:headers});
+//                     const result = await response.json();
                     
-                     setData(result); 
-                     setFilteredData(data);
-                     setErrorMessage('');
-                  } catch (error) {
-                    console.error('Error fetching data:', error);
-                  }
+//                      setData(result); 
+//                      setFilteredData(data);
+//                      setErrorMessage('');
+//                   } catch (error) {
+//                     console.error('Error fetching data:', error);
+//                   }
 
-        });
+//         });
 
+const fetchData = async () => {
+  try {
+    const url = await AsyncStorage.getItem('serverUrl');
+    const response = await fetch(`http://${url}/inspections/`, { headers: headers });
+    const result = await response.json();
+    setData(result);
+    setFilteredData(result); // 直接更新 filteredData
+    setErrorMessage('');
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+};
 
 
 
@@ -96,14 +108,16 @@ const fetchData =  async ()=> await AsyncStorage.getItem('serverUrl').then( asyn
             style={styles.gridItem}
             onPress={() => navigation.navigate('DetailView', { "item":item })}
           >
-         <View style={{ flexDirection: 'col', justifyContent: 'space-between', padding: 6 }}>
+         <View style={{ flexDirection: 'column', justifyContent: 'space-between', padding: 6 }}>
              <Text>受检人: {JSON.parse(item).name}</Text>
              <Text>时间: {JSON.parse(item).createAt}</Text>
 
             </View>
           </TouchableOpacity>
         )}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => (item && item.id ? item.id.toString() : Math.random().toString())}
+
+       
       />
     </SafeAreaView>
  </View>
