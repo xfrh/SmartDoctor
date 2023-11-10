@@ -1,55 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import {StyleSheet, View, Text, Dimensions, Platform,TouchableOpacity,ActivityIndicator  } from 'react-native';
-import { Camera, CameraType } from 'expo-camera';
+import React, { useState, useRef,useEffect } from 'react';
+import { View, Text, StyleSheet,TouchableOpacity,Dimensions,ActivityIndicator,Image } from 'react-native';
+import { Camera,useCameraDevice,useCameraPermission,useCameraFormat } from 'react-native-vision-camera';
 import { AntDesign, MaterialIcons,FontAwesome } from '@expo/vector-icons';
-import { useIsFocused } from '@react-navigation/native'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { useIsFocused } from '@react-navigation/native'; 
+import ImgToBase64 from 'react-native-image-base64';
+
+
 const WINDOW_HEIGHT = Dimensions.get('window').height;
 const CAPTURE_SIZE = Math.floor(WINDOW_HEIGHT * 0.08);
 
-const UploadImageScreen =({route,navigation})=> {
-  //  camera permissions
-  const [hasCameraPermission, setHasCameraPermission] = useState(null);
-  const [camera, setCamera] = useState(null);
-  const [cameraType, setCameraType] = useState(Camera.Constants.Type.back);
-  const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
+const  VisualCameraScreen=({route,navigation})=> {
+  const device = useCameraDevice('back')
+  const isFocused = useIsFocused()
+  const camera = useRef(null)
+  const { hasPermission, requestPermission } = useCameraPermission()
+  const [cameraPerm, setCameraPerm] = useState(false)
   const [isLoading, setIsLoading] = useState(false);
+  const [flashMode, setFlashMode] = useState("off");
+  const[photo,setPhoto]=useState(null);
+  const {id,otherparams} = route.params;
   const { accessToken } = useAuth();
   const headers = {
     'Authorization': `Bearer ${accessToken}`, 
     'Content-Type': 'application/json', 
   };
-  const {id,otherparams} = route.params;
-  // Screen Ratio and image padding
-  const [imagePadding, setImagePadding] = useState(0);
-  const [ratio, setRatio] = useState('4:3');  // default is 4:3
-  const { height, width } = Dimensions.get('window');
-  const screenRatio = height / width;
-  const [isRatioSet, setIsRatioSet] =  useState(false);
-  const[designedHeight,setDesignHeight] =useState(height);
-  const isFocused = useIsFocused();
-  // on screen  load, ask for permission to use the camera
+
   useEffect(() => {
     setIsLoading(false);
-    
     if (isFocused) {
-      
+     
       onHandlePermission();
-
     }
+   
     
   }, [isFocused]);
 
   const onHandlePermission = async () => {
 
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setHasCameraPermission(status === 'granted');
-    
+    await Camera.requestCameraPermission();
+    await requestPermission()
+
+    const cameraPermission = await Camera.getCameraPermissionStatus();
+    setCameraPerm(cameraPermission)
+
    };
-   const handeDelete= async () =>{
+   const toggleFlashlight = async () => {
+    if (flashMode === "off") {
+      setFlashMode("on");
+    } else {
+      setFlashMode("off");
+    }
+    
+  };
+
+  const handeDelete= async () =>{
     await AsyncStorage.getItem('serverUrl').then( async (apiUrl)=>{ 
       await axios.delete(`http://${apiUrl}/inspections/${id}`,{headers} )
     });
@@ -70,176 +78,99 @@ const UploadImageScreen =({route,navigation})=> {
     });
   };
 
-  const toggleCamera = () => {
-    setIsLoading(false);
-    setCameraType(
-      cameraType === Camera.Constants.Type.back
-        ? Camera.Constants.Type.front
-        : Camera.Constants.Type.back
-    );
+
+
+  const onSnap = ()=>{
+    setIsLoading(true);
+    setTimeout(() => {
+      takePhoto();
+     }, 1000); 
   };
 
-
-  const toggleFlashlight = async () => {
-    if (flashMode === Camera.Constants.FlashMode.off) {
-      setFlashMode(Camera.Constants.FlashMode.torch);
-    } else {
-      setFlashMode(Camera.Constants.FlashMode.off);
-    }
-    
-  };
-
-  const onSnap = async () => {
+  const takePhoto = async () => {
    
-  try{
-      setIsLoading(true);
-    if (camera) {
-      
-       const options = { quality: 1, base64: true};
-      const data = await camera.takePictureAsync(options);
-      const source = data.base64;
+     const photo = await camera.current.takePhoto({
+       flash: flashMode,
+       qualityPrioritization: "quality"
+    });
     
-       if (source) {
-       
-         await camera.pausePreview();
-         let base64Img = `data:image/jpg;base64,${source}`;
-         let data = {
-          file: base64Img,
-          inspection_id: id,
-        };
-         await AsyncStorage.getItem('serverUrl').then((apiUrl)=>{ 
-          fetch(`http://${apiUrl}/item/`, {
+         
+    const base64String = await ImgToBase64.getBase64String(`file://${photo.path}`);
+
+    let base64Img = `data:image/jpg;base64,${base64String}`;
+    let data = {
+      file: base64Img,
+      inspection_id: id,
+     
+    };
+
+    const apiUrl=await AsyncStorage.getItem('serverUrl');
+
+    fetch(`http://${apiUrl}/item/`, {
             body: JSON.stringify(data),
             headers: headers,
             method: 'POST',
            
           })
             .then(async response => {
-                setIsLoading(false);
+              
                 let data = await response.json();
                 if(data.status_code=="400"){
-                   handeDelete();
-                   alert(data.error);
-                   handleback();
+                  setIsLoading(false);
+                  handeDelete();
+                  alert(data.error);
+                //  handleback();
+                
                 }
                  
                 else if(data.status_code=="200"){
+                 
                   setIsLoading(false);
                   alert("上传成功!");
-                  // navigation.navigate('ResultList',{id:id});
-                  
+             
                   handleforward();
+                 
+                
                 }
             
             })
             .catch(err => {
+            
               setIsLoading("false");
               handeDelete();
               alert("拍照不成功,请重试: " + err.message);
               handleback();
+             
             });
-        }) 
-      } else{
-        setIsLoading("false");
-        alert("camera source is none")
-      }
-      
-    } else{
-      setIsLoading("false");
-      alert("camera is null");
-    }
 
-  }catch (error) {
-    console.error("发生错误:", error);
-    alert(error.toString());
+
+    
   }
-   
-  };
 
-  // set the camera ratio and padding.
-  // this code assumes a portrait mode screen
-  const prepareRatio = async () => {
-    let desiredRatio = '4:3';  // Start with the system default
-    // This issue only affects Android
-    if (Platform.OS === 'android') {
-      const ratios = await camera.getSupportedRatiosAsync();
-      // console.log(ratios);
-      // Calculate the width/height of each of the supported camera ratios
-      // These width/height are measured in landscape mode
-      // find the ratio that is closest to the screen ratio without going over
-      let distances = {};
-      let realRatios = {};
-      let minDistance = null;
-      for (const ratio of ratios) {
-        const parts = ratio.split(':');
-        const realRatio = parseInt(parts[0]) / parseInt(parts[1]);
-        realRatios[ratio] = realRatio;
-        // ratio can't be taller than screen, so we don't want an abs()
-        const distance = screenRatio - realRatio; 
-        distances[ratio] = realRatio;
-        if (minDistance == null) {
-          minDistance = ratio;
-        } else {
-          if (distance >= 0 && distance < distances[minDistance]) {
-            minDistance = ratio;
-          }
-        }
-      }
-      // set the best match
-      desiredRatio = minDistance;
-      //  calculate the difference between the camera width and the screen height
-      const remainder = Math.floor(
-        (height - realRatios[desiredRatio] * width) / 2
-      );
-      const newheight=Math.round((width * desiredRatio.split(":")[0]) / desiredRatio.split(":")[1]);
-      setDesignHeight(newheight);
-      // set the preview padding and preview ratio
-      setImagePadding(remainder / 2);
-      setRatio(desiredRatio);
-       setIsRatioSet(true);
-    }
-  };
 
-  // the camera must be loaded in order to access the supported ratios
-  const setCameraReady = async() => {
-  
-    if (!isRatioSet) {
-      await prepareRatio();
-    }
-  };
-
-  if (hasCameraPermission === null) {
-    return (
-      <View style={styles.information}>
-        <Text>Waiting for camera permissions</Text>
-      </View>
-    );
-  } else if (hasCameraPermission === false) {
+  if (cameraPerm === false) {
     return (
       <View style={styles.information}>
         <Text>No access to camera</Text>
       </View>
     );
-  } else {
-    return (
-      <View style={styles.container}>
-         { isFocused &&<Camera
-           style={[styles.container,{height: designedHeight,width: width}]}
-           onCameraReady={setCameraReady}
-          flashMode={flashMode}
-          ratio={ratio}
-          ref={(ref) => {
-            setCamera(ref);
-          }}
-          type={cameraType}
-          >
-        </Camera>}
-        <TouchableOpacity
-        style={{ position: 'absolute', top: 20, left: 20 }}
-        onPress={toggleCamera}
-      >
-        <Ionicons name="camera-reverse" size={30} color="white" />
-      </TouchableOpacity>
+  } 
+  
+  if (device == null) 
+     return <View><Text>Loading</Text></View>
+  
+  return (
+    <View style={styles.container}>
+          { isFocused && <Camera
+        
+          ref={camera}
+          style={{flex:1}}
+          device={device}
+          isActive={isFocused}
+          photo={true}
+          torch={flashMode}
+          />}
+           
         <View style={styles.container}>
         <View style={styles.camera}>
           
@@ -253,7 +184,7 @@ const UploadImageScreen =({route,navigation})=> {
           <View style={styles.cornerBottomRight}></View>
           </View>
           </View>
-          <View style={[styles.bottomButtonsContainer,{marginTop: imagePadding, marginBottom: imagePadding}]}>
+          <View style={styles.bottomButtonsContainer}>
             <View style={styles.textContainer}>
             <Text style={styles.text}>
               请将比色卡和试剂纸放在指定区域内进行拍照
@@ -274,7 +205,7 @@ const UploadImageScreen =({route,navigation})=> {
                   />)
             }
             <TouchableOpacity style={styles.iconContainer} onPress={toggleFlashlight}>
-            {flashMode === Camera.Constants.FlashMode.off ? (
+            {flashMode === "off" ? (
               // 如果闪光灯关闭，显示打开闪光灯图标
               <FontAwesome name="flash" size={24} color="white" />
             ) : (
@@ -290,8 +221,11 @@ const UploadImageScreen =({route,navigation})=> {
 
       </View>
     );
-  }
+
+  
 }
+
+
 
 const styles = StyleSheet.create({
   information: { 
@@ -415,4 +349,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UploadImageScreen;
+export default VisualCameraScreen;

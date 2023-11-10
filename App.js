@@ -13,8 +13,7 @@ import TestResultScreen from './screens/TestResultScreen';
 import TestDetailScreen from './screens/TestDetailScreen';
 import CustomBarScreen from './screens/CustomBarScreen';
 import AboutUsScreen from './screens/AboutusScreen';
-
-import UploadImageScreen from './screens/UploadImageScreen';
+import VisualCameraScreen from './screens/VisualCameraScreen';
 import NewUserScreen from './screens/NewUserScreen';
 import ConfigNetScreen from './screens/ConfigNetScreen';
 import ImageProcessScreen from './screens/ImageProcessScreen';
@@ -35,7 +34,7 @@ const App = () => {
         }}  drawerContent={props => <CustomBarScreen {...props} />}>
 
        <Drawer.Screen name="Home" component={HomeScreen} options={{title:'主页'}} />
-    
+   
         <Drawer.Screen
           name="UserList"
           component={UserListScreen}
@@ -43,7 +42,7 @@ const App = () => {
             title: '人员列表',
             headerRight: () => (
               <TouchableOpacity
-                style={{ marginRight: 10 }}
+                style={{ marginRight: 25 }}
                 onPress={() => navigation.navigate('AddPerson')}
               >
                 <FontAwesome name="plus" size={24} color="grey" />
@@ -55,7 +54,7 @@ const App = () => {
         <Drawer.Screen name="NetUrl" component={ConfigNetScreen} options={{title:'设置服务器地址'}} />
          <Drawer.Screen name="AboutUs" component={AboutUsScreen} options={{title:'关于我们'}} />
         
-          <Drawer.Screen name="Upload" component={UploadImageScreen} options={{ title:'拍照', drawerItemStyle: { height: 0 }}} /> 
+          <Drawer.Screen name="Upload" component={VisualCameraScreen} options={{ title:'拍照', drawerItemStyle: { height: 0 }}} /> 
          
          <Drawer.Screen name="AddPerson" component={NewUserScreen} options={{ title:'新建受检人', drawerItemStyle: { height: 0 }}} />
          <Drawer.Screen name="Logout" component={LogoutScreen} options={{title:'退出登录'}} />
