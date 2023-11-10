@@ -2,7 +2,7 @@ from datetime import timedelta
 from http.client import HTTPException
 from typing import Annotated
 from bson import ObjectId
-from fastapi import FastAPI, File, Body, UploadFile, status, HTTPException, Request, Depends, Header
+from fastapi import FastAPI, File, Body, UploadFile, status, HTTPException, Request, Depends, Header,Form
 from fastapi.encoders import jsonable_encoder
 
 from fastapi.exceptions import RequestValidationError
@@ -26,6 +26,8 @@ from fastapi.responses import FileResponse
 import imagePrcess
 import logging
 import json
+import base64
+
 app = FastAPI()
 app.add_middleware(ConditionalMiddleware)
 
@@ -294,7 +296,8 @@ async def read_item(item:Item):
      if status_code ==200:
          # cropped_image = imagePrcess.cropped_image()
          # print(cropped_image)
-         item_id=Database.insert("item",{"file":item.file,"inspection_id" : item.inspection_id})
+         base64_file=imagePrcess.save_image()
+         item_id=Database.insert("item",{"file":base64_file,"inspection_id" : item.inspection_id})
          query = {"_id": ObjectId(item.inspection_id)}
          inspection_id=Database.update("inspection",query,result)
          if item_id and inspection_id:

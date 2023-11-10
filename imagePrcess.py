@@ -3,12 +3,9 @@
 # Python 2/3 compatibility
 from __future__ import print_function
 import sys
-
 PY3 = sys.version_info[0] == 3
-
 if PY3:
     xrange = range
-
 import numpy as np
 import cv2 as cv
 import base64
@@ -109,11 +106,10 @@ def get_image(base64_image):
     image = cv.imdecode(image_np_array, cv.IMREAD_COLOR)
     return image
 
-def save_image(base64_image_data):
-    image_data = base64_image_data.split(',')[1]
-    image_data = base64.b64decode(image_data)
-    image = cv.imdecode(np.frombuffer(image_data, np.uint8), -1)
-    cv.imwrite("output.jpg", image)
+def save_image():
+    with open("image_with_circle.jpg", "rb") as img_file:
+        b64_string = base64.b64encode(img_file.read()).decode('utf-8')
+    return "data:image/jpg;base64," + b64_string
 
 
 def cropped_image(image):
@@ -140,24 +136,29 @@ def circle_detection(base64_image):
     # save_image(base64_image)
     try:
         image = get_image(base64_image)
-        image = cropped_image(image)
+        height, width = image.shape[:2]
+        if(width > height):
+             image = cv.rotate(image, cv.ROTATE_90_CLOCKWISE)
 
+        image = cropped_image(image)
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         gray = cv.medianBlur(gray, 5)
         rows = gray.shape[0]
         circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8,
                                   param1=100, param2=30,
                                   minRadius=1, maxRadius=30)
+
+        if(circles is None):
+            return "没有发现有效的图像",400
+
         num_circles = circles.shape[1]
         selected_circles = []
         print("找到{}个圆".format(num_circles))
-        if circles is None:
-            return "质检不通过", 400
         if(num_circles<2 or num_circles > 3):
             return "质检不通过", 400
     except Exception as e:
         error_message = e.args[0] if e.args else "Unknown error"
-        return "质检不通过",400
+        return error_message,400
     # 初始化一个字典列表来存储检测到的圆形的颜色、坐标和半径
     else:
         try:
@@ -187,6 +188,8 @@ def circle_detection(base64_image):
             now = datetime.now()
             newvalue = {"$set": {"conclusion": out_str, "updateAt": now.strftime("%Y-%m-%d %H:%M")}}
             cv.imwrite('image_with_circle.jpg', image)
+            bs=save_image()
+
             return newvalue, 200
         except Exception as e:
             error_message = e.args[0] if e.args else "Unknown error"
