@@ -35,8 +35,8 @@ def should_apply_middleware(request: Request) -> bool:
     # 下面是一个示例条件，您可以根据您的需求进行修改
     if request.url.path.startswith("/login"):
         return False
-    # elif request.url.path.startswith("/detail"):
-    #     return False
+    elif request.url.path.startswith("/download_apk"):
+        return False
     else:
         return True
 

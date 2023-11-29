@@ -23,12 +23,15 @@ from department import Department
 from inspection import Inspection
 from database import Database
 from fastapi.responses import FileResponse
+from pathlib import Path
+
 import imagePrcess
 import logging
 import json
 import base64
 
 app = FastAPI()
+sample_apk_path = Path("apk/SmartDoctor.apk")
 app.add_middleware(ConditionalMiddleware)
 
 app.add_middleware(
@@ -52,6 +55,16 @@ Database.initialize()
 async def root():
      return {"message": "Hello World"}
 
+
+@app.get("/download_apk")
+async def download_apk():
+    # 使用 FileResponse 返回 APK 文件
+    return FileResponse(sample_apk_path, filename="SmartDoctor.apk", media_type="application/vnd.android.package-archive")
+
+@app.get("/video-file")
+def get_video_file():
+    video_path = "video/sample.mp4"
+    return File(video_path, media_type="video/mp4")
 
 @app.post("/users/")
 async def create_user(user: User):
@@ -226,14 +239,17 @@ async def delete_inspection(id:str):
                x = x.replace("&","").strip()
 
             myquery = {"_id": ObjectId(x)}
-
+            myquery_item={"inspection_id": x}
             Database.deleteone("inspection", myquery)
+            Database.deleteone("item", myquery_item)
+
             deleters.append({"id":x})
         return deleters
     else:
         myquery = {"_id": ObjectId(id)}
-        print(myquery)
+        myquery_item={"inspection_id": id}
         Database.deleteone("inspection", myquery)
+        Database.deleteone("item", myquery_item)
         return {"id": id}
 
 @app.put("/inspections/{id}")
@@ -347,8 +363,11 @@ async def read_detail(id: str):
 
     else:
         pass
-
-
+@app.delete("/image_delete/{id}")
+async def image_delete(id:str):
+    myquery = {"inspection_id": ObjectId(id)}
+    Database.deleteone("item", myquery)
+    return {"item_id": id}
 @app.get("/items/")
 async def read_items(q: str | None = None):
      items= []

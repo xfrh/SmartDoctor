@@ -149,13 +149,13 @@ def circle_detection(base64_image):
                                   minRadius=1, maxRadius=30)
 
         if(circles is None):
-            return "没有发现有效的图像",400
+            return "没有发现有效的样本",400
 
         num_circles = circles.shape[1]
         selected_circles = []
         print("找到{}个圆".format(num_circles))
         if(num_circles<2 or num_circles > 3):
-            return "质检不通过", 400
+            return "没有正确定位到检测样本，请重新拍摄", 400
     except Exception as e:
         error_message = e.args[0] if e.args else "Unknown error"
         return error_message,400
@@ -167,9 +167,10 @@ def circle_detection(base64_image):
             for i in circles[0, :]:
                  center = (i[0], i[1])
                 # circle center
-                 cv.circle(image, center, 1, (0, 100, 100), 3)
+                #  cv.circle(image, center, 1, (0, 100, 100), 3)
                 # circle outline
                  radius = i[2]
+
                  b, g, r = image[center]
                  selected_circles.append((radius, (r, g, b)))
                  cv.circle(image, center, radius, (255, 0, 255), 3)
@@ -188,7 +189,7 @@ def circle_detection(base64_image):
             now = datetime.now()
             newvalue = {"$set": {"conclusion": out_str, "updateAt": now.strftime("%Y-%m-%d %H:%M")}}
             cv.imwrite('image_with_circle.jpg', image)
-            bs=save_image()
+            # bs=save_image()
 
             return newvalue, 200
         except Exception as e:
