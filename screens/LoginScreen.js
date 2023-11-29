@@ -10,13 +10,15 @@ const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const { login } = useAuth();
+  const { login,logout } = useAuth();
+
   const isFocused = useIsFocused();
   useEffect(() => {
     setUsername('');
     setPassword('');
     setErrorMessage('');
-  
+    if(isFocused)
+       logout();
 }, [isFocused]); 
 
 
@@ -37,9 +39,16 @@ const LoginScreen = ({ navigation }) => {
        return;
      }
 
-      await AsyncStorage.getItem('serverUrl').then(async (url)=>{
+     const apiUrl=await AsyncStorage.getItem('serverUrl');
+     if(apiUrl==null || apiUrl==''){
+       alert("请先设置网络参数");
+       navigation.navigate("NetUrl");
+       return;
+     }
+
+      
        try {
-          const login_url=`http://${url}/login/`;
+          const login_url=`http://${apiUrl}/login/`;
           const response = await axios.post(login_url, {
            "username": username,
           "password" : password,
@@ -54,8 +63,6 @@ const LoginScreen = ({ navigation }) => {
           alert(error);
        }
 
-    });
-       
    
   };
 

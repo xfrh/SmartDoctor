@@ -3,6 +3,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { View, Text, StyleSheet,ScrollView,Image,TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
+import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 function TestDetailScreen({ route,navigation }) {
   const isFocused = useIsFocused();
@@ -32,6 +33,10 @@ function TestDetailScreen({ route,navigation }) {
               setBase64Image(response.data);
           })
            .catch((error) => {
+            if(error.response && error.response.status===500){
+              alert("token is expired, relogin please");
+              navigation.navigate("Login");
+            }
              console.error('Error fetching image:', error);
            });
         } catch (error) {
@@ -40,11 +45,20 @@ function TestDetailScreen({ route,navigation }) {
     });
    };
 
-
+  const handleDelete=async() =>{
+    const id =JSON.parse(item).id;
+    const apiUrl=await AsyncStorage.getItem('serverUrl');
+     await axios.delete(`http://${apiUrl}/inspections/${id}`,{headers} ).catch((error)=>{
+      if(error.response && error.response.status===500){
+        alert("token is expired,relogin please");
+        Navigator.navigate("Login");
+      }
+     });
+     navigation.navigate('ResultList')
+  };
 
    const handleImagePress = () => {
-         const InspectId =JSON.parse(item).id;
-        navigation.navigate('ImagePreview',{"InspectId":InspectId});
+    navigation.navigate('ImagePreview', { "item":item })
   };
   return (
     <ScrollView style={styles.container}>
@@ -122,25 +136,41 @@ function TestDetailScreen({ route,navigation }) {
        
        } 
      
-      
-      <View style={styles.textContainer} >
+     <View style={styles.textContainer} >
      
-      <Text style={styles.title}>测试用图片:</Text>
-      
-      <TouchableOpacity onPress={handleImagePress}> 
-      {
-        base64Image && <Image
+     <Text style={styles.title}>测试用图片:</Text>
+     
+     <TouchableOpacity onPress={handleImagePress}>
+    {base64Image && (
+      <Image
         source={{ uri: base64Image }}
-        style={{ width: 150, height: 200, marginTop: 20, alignSelf: 'flex-start' }} />
-  
-      }
-    
-     
-    
-     </TouchableOpacity>
-      </View>
+        style={{
+          width: 150,
+          height: 200,
+          marginTop: 20,
+          alignSelf: 'flex-start',
+          resizeMode: 'cover', // 或者 'contain', 'stretch'，根据需求选择
+        }}
+      />
       
-    
+    )}
+  </TouchableOpacity>
+
+      <TouchableOpacity
+              onPress={handleDelete}
+              style={{
+                position: 'absolute',
+                top: '90%',
+                left: '25%',
+                transform: [{ translateX: -15 }, { translateY: -15 }],
+                width: 30,
+                height: 30,
+              }}
+            >
+              <></><FontAwesome name="trash" size={30} color="black" />
+    </TouchableOpacity>
+</View>
+
 
      </View>
      </ScrollView>

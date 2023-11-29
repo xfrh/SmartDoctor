@@ -129,7 +129,12 @@ const NewUserScreen  = ({navigation}) => {
                navigation.navigate('UserList',{"id": response.data.id});
               
             } catch (error) {
-              alert(error);
+              if(error.response && error.response.status===500){
+                alert("token is expired, relogin please");
+                navigation.navigate("Login");
+              }
+              else
+                 alert(error);
             }
 
         });

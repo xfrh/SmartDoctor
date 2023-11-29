@@ -4,10 +4,10 @@ import { Camera,useCameraDevice,useCameraPermission,useCameraFormat } from 'reac
 import { AntDesign, MaterialIcons,FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useIsFocused } from '@react-navigation/native'; 
 import ImgToBase64 from 'react-native-image-base64';
+
 
 
 const WINDOW_HEIGHT = Dimensions.get('window').height;
@@ -18,7 +18,6 @@ const  VisualCameraScreen=({route,navigation})=> {
   const isFocused = useIsFocused()
   const camera = useRef(null)
   const { hasPermission, requestPermission } = useCameraPermission()
-  const [cameraPerm, setCameraPerm] = useState(false)
   const [isLoading, setIsLoading] = useState(false);
   const [flashMode, setFlashMode] = useState("off");
   const[photo,setPhoto]=useState(null);
@@ -28,27 +27,16 @@ const  VisualCameraScreen=({route,navigation})=> {
     'Authorization': `Bearer ${accessToken}`, 
     'Content-Type': 'application/json', 
   };
-
   useEffect(() => {
     setIsLoading(false);
     if (isFocused) {
-     
-      onHandlePermission();
+       if(!hasPermission)
+         requestPermission();
     }
    
-    
   }, [isFocused]);
 
-  const onHandlePermission = async () => {
-
-    await Camera.requestCameraPermission();
-    await requestPermission()
-
-    const cameraPermission = await Camera.getCameraPermissionStatus();
-    setCameraPerm(cameraPermission)
-
-   };
-   const toggleFlashlight = async () => {
+  const toggleFlashlight = async () => {
     if (flashMode === "off") {
       setFlashMode("on");
     } else {
@@ -59,107 +47,103 @@ const  VisualCameraScreen=({route,navigation})=> {
 
   const handeDelete= async () =>{
     await AsyncStorage.getItem('serverUrl').then( async (apiUrl)=>{ 
-      await axios.delete(`http://${apiUrl}/inspections/${id}`,{headers} )
+      await axios.delete(`http://${apiUrl}/inspections/${id}`,{headers} ).catch((error)=>{
+        if(error.response && error.response.status_code===500){
+          alert("token is expired,relogin please");
+          navigation.navigate("Login");
+        }
+      })
     });
   };
 
-   const handleback=() =>{
+  
+  const handleback=() =>{
     navigation.navigate("UserList");
-   
+ 
   };
 
   const handleforward= async()=>{
-      await AsyncStorage.getItem('serverUrl').then( (apiUrl)=>{ 
-         axios.get(`http://${apiUrl}/inspections/${id}`,{headers} ).then(response=>{
-          let item =response.data;
-          navigation.navigate('DetailView', { "item":item })
+    await AsyncStorage.getItem('serverUrl').then( (apiUrl)=>{ 
+       axios.get(`http://${apiUrl}/inspections/${id}`,{headers} ).then(response=>{
+        let item =response.data;
+        navigation.navigate('DetailView', { "item":item })
 
-         })
-    });
-  };
+       }).catch((error)=>{
+        if(error.response && error.response.status_code===500){
+          alert("token is expired,relogin please");
+          navigation.navigate("Login");
+        }
+       })
+  });
+};
 
+const onSnap = ()=>{
+  setIsLoading(true);
+  setTimeout(() => {
+    takePhoto();
+   }, 1000); 
+};
 
+const takePhoto = async () => {
+  const photo = await camera.current.takePhoto({
+    flash: flashMode,
+    qualityPrioritization: "quality"
+ });
 
-  const onSnap = ()=>{
-    setIsLoading(true);
-    setTimeout(() => {
-      takePhoto();
-     }, 1000); 
-  };
+ const base64String = await ImgToBase64.getBase64String(`file://${photo.path}`);
 
-  const takePhoto = async () => {
+ let base64Img = `data:image/jpg;base64,${base64String}`;
+ let data = {
+   file: base64Img,
+   inspection_id: id,
+  
+ };
+
+ const apiUrl=await AsyncStorage.getItem('serverUrl');
+  try {
+   const response= await axios.post(`http://${apiUrl}/item/`,  JSON.stringify(data), { headers: headers })
+  //  console.log(response.data);
+   if(response.data.error){
+    if(response.data.error.status_code===500){
+      alert("token is expired, relogin please");
+      navigation.navigate("Login");
+    }
+    else
+    {
+      alert(response.data.error)
+      setIsLoading(false);
+      handeDelete();
+      handleback();    
+    }
    
-     const photo = await camera.current.takePhoto({
-       flash: flashMode,
-       qualityPrioritization: "quality"
-    });
-    
-         
-    const base64String = await ImgToBase64.getBase64String(`file://${photo.path}`);
-
-    let base64Img = `data:image/jpg;base64,${base64String}`;
-    let data = {
-      file: base64Img,
-      inspection_id: id,
-     
-    };
-
-    const apiUrl=await AsyncStorage.getItem('serverUrl');
-
-    fetch(`http://${apiUrl}/item/`, {
-            body: JSON.stringify(data),
-            headers: headers,
-            method: 'POST',
-           
-          })
-            .then(async response => {
-              
-                let data = await response.json();
-                if(data.status_code=="400"){
-                  setIsLoading(false);
-                  handeDelete();
-                  alert(data.error);
-                //  handleback();
-                
-                }
-                 
-                else if(data.status_code=="200"){
-                 
-                  setIsLoading(false);
-                  alert("上传成功!");
-             
-                  handleforward();
-                 
-                
-                }
-            
-            })
-            .catch(err => {
-            
-              setIsLoading("false");
-              handeDelete();
-              alert("拍照不成功,请重试: " + err.message);
-              handleback();
-             
-            });
-
-
-    
+   }
+  else{
+    setIsLoading(false);
+    alert("上传成功!");
+    handleforward(); 
   }
 
+  } catch (error) {
+     if(error.response.status_code===500){
+      alert("token is expired, relogin please");
+      navigation.navigate("Login");
+     }
+  
+  }
+}
 
-  if (cameraPerm === false) {
-    return (
-      <View style={styles.information}>
-        <Text>No access to camera</Text>
-      </View>
-    );
-  } 
-  
-  if (device == null) 
-     return <View><Text>Loading</Text></View>
-  
+if (!hasPermission) {
   return (
+    <View style={styles.information}>
+      <Text>No access to camera</Text>
+    </View>
+  );
+} 
+
+if (device == null) 
+   return <View><Text>Loading</Text></View>
+
+   return (
     <View style={styles.container}>
           { isFocused && <Camera
         
@@ -198,7 +182,7 @@ const  VisualCameraScreen=({route,navigation})=> {
             {
               isLoading? (<ActivityIndicator size={40} color="white" />) :
             (<TouchableOpacity
-                    activeOpacity={0.7}
+                    activeOpacity={0.8}
                     onPress={onSnap}
                     style={styles.capture}
                     disabled={isLoading}
@@ -215,17 +199,14 @@ const  VisualCameraScreen=({route,navigation})=> {
               <Text style={styles.iconText}>闪光灯</Text>
             </TouchableOpacity>
               </View>
-
+ 
           </View>
         </View>
-
+ 
       </View>
     );
 
-  
 }
-
-
 
 const styles = StyleSheet.create({
   information: { 
@@ -348,5 +329,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 30
   },
 });
+
 
 export default VisualCameraScreen;

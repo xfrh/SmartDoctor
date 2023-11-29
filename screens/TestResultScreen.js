@@ -24,41 +24,32 @@ import axios from 'axios';
   useEffect(() => {
     setSearchQuery('');
     setErrorMessage('');
-
+    setData([]);
+    setNames([]);
     if (isFocused) {
        fetchData();
     }
   }, [isFocused]); 
 
-// const fetchData =  async ()=> await AsyncStorage.getItem('serverUrl').then( async (url)=>{
-//             try {
-                   
-//                     const response = await fetch(`http://${url}/inspections/`,{headers:headers});
-//                     const result = await response.json();
-                    
-//                      setData(result); 
-//                      setFilteredData(data);
-//                      setErrorMessage('');
-//                   } catch (error) {
-//                     console.error('Error fetching data:', error);
-//                   }
-
-//         });
 
 const fetchData = async () => {
   try {
-    const url = await AsyncStorage.getItem('serverUrl');
-    const response = await fetch(`http://${url}/inspections/`, { headers: headers });
-    const result = await response.json();
-    setData(result);
-    setFilteredData(result); // 直接更新 filteredData
-    setErrorMessage('');
+      const url = await AsyncStorage.getItem('serverUrl');
+      const response= await axios.get(`http://${url}/inspections/`, { headers: headers });
+      const result=response.data;  
+      setData(result);
+      setFilteredData(result); 
+      setErrorMessage('');
+ 
   } catch (error) {
-    console.error('Error fetching data:', error);
+    if(error.response && error.response.status===500){
+      alert("token is expired, relogin please");
+      navigation.navigate("Login");
+    }
+    else
+       alert(error);
   }
 };
-
-
 
     const handleSearch = () => {
       if (searchQuery === '') {

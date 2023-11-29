@@ -11,7 +11,7 @@ function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome to My App</Text>
+        <Text style={styles.welcomeText}>Welcome to SmartDoctor</Text>
       </View>
       <View style={styles.middleContainer}>
         <ImageBackground

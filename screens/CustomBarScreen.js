@@ -16,8 +16,6 @@ import {
 } from '@react-navigation/drawer';
 
 
-
-
 const CustomBarScreen = (props) => {
    return (
     <SafeAreaView style={{flex: 1}}>
@@ -33,19 +31,6 @@ const CustomBarScreen = (props) => {
         }}>Hello</Text>
       <DrawerContentScrollView {...props}>
         <DrawerItemList {...props}  />
-        <View style={styles.customItem}>
-          <Text
-            onPress={() => {
-              Linking.openURL('https://aboutreact.com/');
-            }}>
-            分享应用
-          </Text>
-          <Image
-              source={require('.././assets/share.png')}
-            style={styles.iconStyle}
-          />
-        </View>
-       
       </DrawerContentScrollView>
       <Text
         style={{
@@ -53,7 +38,7 @@ const CustomBarScreen = (props) => {
           textAlign: 'center',
           color: 'grey'
         }}>
-        www.aboutreact.com
+       Version: SMTDR® v1.0
       </Text>
     </SafeAreaView>
   );

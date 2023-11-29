@@ -8,13 +8,13 @@ import { useAuth } from '../context/AuthContext';
 const PreviewImageScreen = ({route,navigation}) => {
 const [base64Image, setBase64Image] = useState('');
 const isFocused = useIsFocused();
-const{InspectId,others} =route.params;
+const{item,others} =route.params;
 const { accessToken } = useAuth();
 const headers = {
   'Authorization': `Bearer ${accessToken}`, 
   'Content-Type': 'application/json', 
 };
-
+const InspectId =JSON.parse(item).id;
 useEffect(() => {
   setBase64Image('');
 
@@ -35,6 +35,13 @@ if (isFocused) {
            
         })
         .catch((error) => {
+          if(error.response && error.response.status===500){
+            alert("token is expired, relogin please");
+            navigation.navigate("Login");
+          }
+          else
+             alert(error);
+
           console.error('Error fetching image:', error);
         });
   
@@ -45,7 +52,8 @@ if (isFocused) {
  };
 
  const handleImagePress = () => {
-    navigation.navigate("ResultList");
+    // navigation.navigate("ResultList");
+    navigation.navigate('DetailView', { "item":item })
 };
 
  

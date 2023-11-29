@@ -18,6 +18,8 @@ import NewUserScreen from './screens/NewUserScreen';
 import ConfigNetScreen from './screens/ConfigNetScreen';
 import ImageProcessScreen from './screens/ImageProcessScreen';
 import PreviewImageScreen from './screens/PreviewImageScreen';
+import VideoScreen from './screens/VideoScreen';
+import QrcodeScreen from './screens/QrcodeScreen';
 import LogoutScreen from './screens/logout';
 import {AuthProvider } from './context/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -52,8 +54,9 @@ const App = () => {
         />
         <Drawer.Screen name="ResultList" component={TestResultScreen} options={{title:'检验结果查询'}} />
         <Drawer.Screen name="NetUrl" component={ConfigNetScreen} options={{title:'设置服务器地址'}} />
+         <Drawer.Screen name="VideoUrl" component={VideoScreen} options={{title:'TTP原理解析'}} />
+         <Drawer.Screen name="QrCodeUrl" component={QrcodeScreen} options={{title:'分享应用'}} />
          <Drawer.Screen name="AboutUs" component={AboutUsScreen} options={{title:'关于我们'}} />
-        
           <Drawer.Screen name="Upload" component={VisualCameraScreen} options={{ title:'拍照', drawerItemStyle: { height: 0 }}} /> 
          
          <Drawer.Screen name="AddPerson" component={NewUserScreen} options={{ title:'新建受检人', drawerItemStyle: { height: 0 }}} />
