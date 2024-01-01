@@ -1,15 +1,9 @@
 from datetime import timedelta
 from http.client import HTTPException
-from typing import Annotated
 from bson import ObjectId
 from fastapi import FastAPI, File, Body, UploadFile, status, HTTPException, Request, Depends, Header,Form
-from fastapi.encoders import jsonable_encoder
-
-from fastapi.exceptions import RequestValidationError
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-
 import auth
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, encyptPassword,decyptPassword,verify_access_token
 from jsonEncoder import JSONEncoder
@@ -25,10 +19,10 @@ from database import Database
 from fastapi.responses import FileResponse
 from pathlib import Path
 
+
 import imagePrcess
-import logging
 import json
-import base64
+
 
 app = FastAPI()
 sample_apk_path = Path("apk/SmartDoctor.apk")
@@ -55,6 +49,9 @@ Database.initialize()
 async def root():
      return {"message": "Hello World"}
 
+@app.get("/version")
+async def version():
+    return {"version":"1.0"}
 
 @app.get("/download_apk")
 async def download_apk():
@@ -112,19 +109,24 @@ async def read_user(id:str):
      pass
 
 @app.get("/users/")
-async def read_users(request:Request,q: str | None = None):
+async def read_users(request:Request,q: str | None = None,start_date:str | None = None,end_date:str | None=None):
     users = []
+    query={}
     my_data = request.state.user
-    if my_data['role'] == 'admin':
-        qq = []
-    else:
-        qq = {"department": my_data['department']}
+
+    if my_data['role'] != 'admin':
+        query["department"] = my_data['department']
     if q:
-        if my_data['role'] == 'admin':
-            qq ={'username':{'$regex': q}}
-        else:
-            qq = {"department": my_data['department'],'username':{'$regex': q} }
-    results = Database.find("user", qq)
+        query['username']={'$regex': q}
+    if start_date and end_date:
+        query["createAt"] = {"$gte": start_date, "$lte": end_date}
+    elif start_date is not None:
+        print(start_date)
+        query["createAt"] = {"$gte": start_date}
+    elif end_date is not None:
+        query["createAt"] = {"$lte": end_date}
+
+    results = Database.find("user", query)
     for doc2 in results:
         doc2["password"] = decyptPassword(doc2["password"])
         ret = JSONEncoder().encode(doc2).replace("_id", "id")
@@ -198,21 +200,23 @@ async def read_accepter(id:str):
             pass
 
 @app.get("/accepters/")
-async def read_accepters(request:Request,q: str | None = None):
+async def read_accepters(request:Request,q: str | None = None,start_date:str | None=None, end_date:str | None=None):
     accepters = []
+    query={}
     my_data = request.state.user
-    if my_data['role'] == 'admin':
-        qq=[]
-    else:
-        qq ={"department" : my_data['department']}
-
+    if my_data['role'] != 'admin':
+        query["department"] = my_data['department']
     if q:
-        if my_data['role'] == 'admin':
-            qq = {'name': {'$regex': q}}
-        else:
-            qq = {"department": my_data['department'], 'name': {'$regex': q}}
+        query['username'] = {'$regex': q}
+    if start_date and end_date:
+        query["createAt"] = {"$gte": start_date, "$lte": end_date}
+    elif start_date is not None:
 
-    results = Database.find("accepter", qq)
+        query["createAt"] = {"$gte": start_date}
+    elif end_date is not None:
+        query["createAt"] = {"$lte": end_date}
+
+    results = Database.find("accepter", query)
     for doc2 in results:
 
        ret = JSONEncoder().encode(doc2).replace("_id", "id")
@@ -279,19 +283,23 @@ async def read_inspection(id:str):
             pass
 
 @app.get("/inspections/")
-async def read_inspections(request:Request,q: str | None = None):
+async def read_inspections(request:Request,q: str | None = None,start_date:str | None=None, end_date:str | None=None):
     inspections = []
+    query = {}
     my_data = request.state.user
-    if my_data['role'] == 'admin':
-        qq = []
-    else:
-        qq = {"testedby": my_data['department']}
+
+    if my_data['role'] != 'admin':
+       query['department']= my_data['department']
     if q:
-        if my_data['role'] == 'admin':
-            qq = {'name': {'$regex': q}}
-        else:
-            qq = {"department": my_data['department'], 'name': {'$regex': q}}
-    results = Database.find("inspection", qq)
+       query['name'] = {'$regex': q}
+    if(start_date and end_date):
+        query["createAt"] = {"$gte": start_date, "$lte": end_date}
+    elif start_date is not None:
+        query["createAt"] = {"$gte": start_date}
+    elif end_date is not None:
+        query["createAt"] = {"$lte": end_date}
+
+    results = Database.find("inspection", query)
     for doc2 in results:
         ret = JSONEncoder().encode(doc2).replace("_id", "id")
         inspections.append(ret)
@@ -388,16 +396,21 @@ async def create_upload_file(file: UploadFile):
     return {"filename": file.filename}
 
 @app.get("/departments/")
-async def read_departments(request:Request,q: str | None = None):
+async def read_departments(request:Request,q: str | None = None,start_date:str | None=None,end_date:str | None=None):
     departments = []
+    query={}
     my_data = request.state.user
-    if my_data['role'] == 'admin':
-        qq = []
-    else:
-        qq = {"name": my_data['department']}
-    if q and my_data['role'] == 'admin':
-        qq = {'name': {'$regex': q}}
-    results = Database.find("department", qq)
+    if my_data['role'] != 'admin':
+        query['department'] = my_data['department']
+    if q:
+        query['name'] = {'$regex': q}
+    if (start_date and end_date):
+        query["createAt"] = {"$gte": start_date, "$lte": end_date}
+    elif start_date is not None:
+        query["createAt"] = {"$gte": start_date}
+    elif end_date is not None:
+        query["createAt"] = {"$lte": end_date}
+    results = Database.find("department", query)
     for doc2 in results:
         ret = JSONEncoder().encode(doc2).replace("_id", "id")
         departments.append(ret)
