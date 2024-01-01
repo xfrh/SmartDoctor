@@ -2,13 +2,12 @@ import {
     List,
     Datagrid,
     TextField,
-    ReferenceField,
     SelectInput,
     Create,
     required,
     Edit,
     SimpleForm,
-    ReferenceInput,
+    DateInput,
     TextInput,
     useEditController,
     
@@ -115,5 +114,6 @@ export const InspectionCreate = () => (
 
   const userFilters = [
     <TextInput source="q" label="搜索..." alwaysOn />,
-    <ReferenceInput source="name" label="受检人" reference="inspections" />,
+    <DateInput source="start_date" label="起始日期" />,
+    <DateInput source="end_date"   label="截至日期"/>,
 ];

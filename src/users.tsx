@@ -12,12 +12,13 @@ import {
     TextInput,
     PasswordInput, 
     SelectInput,
-   
+    DateInput, 
 
-   
 } from "react-admin";
 import React, { useEffect, useState } from 'react';
 import { useDataProvider } from 'react-admin';
+
+
 
 const validatePassword = (value) => {
   if (value.length < 6) {
@@ -128,8 +129,10 @@ return (
 
 
   const userFilters = [
-    <TextInput source="q" label="搜索..." alwaysOn />,
-    <ReferenceInput source="username" label="用户名" reference="users" />,
+    <TextInput source="q" label="用户名" alwaysOn />,
+    <DateInput source="start_date" label="起始日期" />,
+    <DateInput source="end_date"   label="截至日期"/>,
+ 
 ];
 
 

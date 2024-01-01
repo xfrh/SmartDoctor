@@ -8,10 +8,9 @@ import {
     Create,
     Edit,
     SimpleForm,
-    ReferenceInput,
     TextInput,
-    PasswordInput, 
     SelectInput,
+    DateInput, 
 } from "react-admin";
 import React, { useEffect, useState } from 'react';
 import { useDataProvider } from 'react-admin';
@@ -91,5 +90,7 @@ export const AccepterCreate = () =>
  }
   const userFilters = [
     <TextInput source="q" label="搜索..." alwaysOn />,
-    <ReferenceInput source="name" label="受检人" reference="accepters" />,
+    <DateInput source="start_date" label="起始日期" />,
+    <DateInput source="end_date"   label="截至日期"/>,
+ 
 ];

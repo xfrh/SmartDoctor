@@ -21,15 +21,24 @@ const httpClient = (url, options = {}) => {
 // 定义数据提供者
 const dataProvider: DataProvider = {
    getList: (resource, params) => {
-    let url = `${apiUrl}/${resource}`;
+    let url = `${apiUrl}/${resource}?1=1`;
+   if (params.filter) {
+       if(params.filter.q){
+          const q = params.filter.q;
+           url += `&q=${q}`;
+       }
+       if(params.filter.start_date){
+           const sdte=params.filter.start_date;
+           url += `&start_date=${sdte}`;
+       }
+       if(params.filter.end_date){
+        const edt= params.filter.end_date;
+          url += `&end_date=${edt}`;
+       }
 
-    // Check if a 'q' filter parameter is provided
-    if (params.filter && params.filter.q) {
-      const q = params.filter.q;
-  
-      // Append the 'q' filter parameter to the URL
-      url += `?q=${q}`;
     }
+   console.log(url);
+
    return httpClient(url).then((response) => ({
           
            data: response.json.map((item: string) => {
@@ -66,8 +75,9 @@ const dataProvider: DataProvider = {
   
   getImage: (resource, params) => {
     const url = `${apiUrl}/${resource}/${params.id}`;
+    console.log(url)
     return httpClient(url)
-    .then(response => response.text()) // 以字符串形式读取响应数据
+    .then(response => response.body) // 以字符串形式读取响应数据
     .then(data => ({
       data: data, 
     }));
