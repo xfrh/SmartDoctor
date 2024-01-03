@@ -35,7 +35,7 @@ export const authProvider: AuthProvider = {
     },
     // called when the API returns an error
     checkError: ({ status }: { status: number }) => {
-        if (status === 401 || status === 403) {
+          if (status === 401 || status === 403) {
             localStorage.removeItem("access_token");
             return Promise.reject();
         }

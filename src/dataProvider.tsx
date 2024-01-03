@@ -1,14 +1,23 @@
 import { fetchUtils, DataProvider  } from 'react-admin';
 import { stringify } from 'query-string';
 import {getCurrentDateTime } from './users'
+import {isTokenExpired} from './tokenUtils'
 
 // 定义后端API的基本URL
 const apiUrl = 'http://192.168.1.108:8000';
 
-const httpClient = (url, options = {}) => {
+const httpClient =  (url, options = {}) => {
   // 添加 access_token 到请求头
   const accessToken = localStorage.getItem("access_token");
+ 
   if (accessToken) {
+
+    if(isTokenExpired(accessToken)){
+      alert("token is expired");
+      localStorage.removeItem("access_token");
+            return Promise.resolve();
+    }
+
     options.headers = new Headers({
       ...options.headers,
       Authorization: `Bearer ${accessToken}`,
@@ -16,7 +25,9 @@ const httpClient = (url, options = {}) => {
   }
 
   return fetchUtils.fetchJson(url, options);
+ 
 };
+
 
 // 定义数据提供者
 const dataProvider: DataProvider = {
@@ -37,16 +48,14 @@ const dataProvider: DataProvider = {
        }
 
     }
-   console.log(url);
-
+  
    return httpClient(url).then((response) => ({
-          
            data: response.json.map((item: string) => {
            const parsedItem = JSON.parse(item);
-            return parsedItem;
+           return parsedItem;
          }),
          total:1,
-    }));
+    }))
 
   },
 
